@@ -24,7 +24,7 @@ namespace BestStories.Model
 
         // GET: api/<BestStories>
         [HttpGet]
-        public async Task<IEnumerable<StoryDTO>> GetAsync()
+        public async Task<IEnumerable<Story>> GetAsync()
         {
             return await bestStoriesService.GetBestStoriesAsync();
         }

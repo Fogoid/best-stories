@@ -8,20 +8,19 @@ namespace BestStories.Services
 {
     public class BestStoriesService : IBestStoriesService
     {
-        private static DateTime lastUpdate;
-
+        private DateTime lastUpdate;
+        
         private readonly BestStoriesProperties properties;
-        private readonly BestStoriesContext context;
         private readonly ILogger<BestStoriesService> logger;
+        private readonly Dictionary<DateTime, IList<Story>> bestStoriesDic = new();
 
-        public BestStoriesService(ILogger<BestStoriesService> logger, IConfiguration configuration, BestStoriesContext context)
+        public BestStoriesService(ILogger<BestStoriesService> logger, IConfiguration configuration)
         {
             this.logger = logger;
             this.properties = new BestStoriesProperties(configuration);
-            this.context = context;
         }
 
-        public async Task<IEnumerable<StoryDTO>> GetBestStoriesAsync()
+        public async Task<IEnumerable<Story>> GetBestStoriesAsync()
         {
             // Update stories only if they are past validity time
             if (lastUpdate.AddMilliseconds(properties.Validity).CompareTo(DateTime.UtcNow) == -1)
@@ -29,15 +28,12 @@ namespace BestStories.Services
                 await UpdateStoriesAsync();
             }
 
-            return context.Story.ToList()
-                .OrderByDescending(s => s.CreationTime)
-                .Take(20)
-                .Select(s => ConvertToStoryDTO(s));
+            return bestStoriesDic[lastUpdate];
         }
 
-        private StoryDTO ConvertToStoryDTO(Story story)
+        private Story ConvertToStoryDTO(Story story)
         {
-            return new StoryDTO()
+            return new Story()
             {
                 Title = story.Title,
                 Uri = story.Uri,
@@ -50,7 +46,7 @@ namespace BestStories.Services
 
         private async Task UpdateStoriesAsync()
         {
-            HttpClient client = new HttpClient();
+            var client = new HttpClient();
             var response = await client.GetAsync(properties.BestStoriesUri);
 
             if (!response.IsSuccessStatusCode)
@@ -58,7 +54,9 @@ namespace BestStories.Services
                 return;
             }
 
-            lastUpdate = DateTime.UtcNow;
+            var newTime = DateTime.UtcNow;
+            var bestInstantStories = new List<Story>();
+
 
             var result = await response.Content.ReadAsStringAsync();
             var bestStories = JArray.Parse(result);
@@ -78,16 +76,22 @@ namespace BestStories.Services
                     JObject itemDetails = JsonConvert.DeserializeObject<JObject>(itemResult);
 
                     var itemStory = CreateStory(itemDetails);
-                    itemStory.CreationTime = lastUpdate;
 
-                    context.Story.Add(itemStory);
+                    bestInstantStories.Add(itemStory);
 
                     i++;
                 }
                 totalChecked++;
+
             }
 
-            await context.SaveChangesAsync();
+            if (bestInstantStories.Count != 20)
+            {
+                //Throw exception
+            }
+
+            lastUpdate = newTime;
+            bestStoriesDic.Add(newTime, bestInstantStories);
         }
 
         private Story CreateStory(JObject itemDetails)

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "4rUblXDtPEZxx7VnauCVdLwQANy7sWI8D9q7kjaVfCWvZ+VVvjKKyxz6K2sbqTthYH0LyZfVcPEhtHWayf8qXA==",
+  "dgSpecHash": "8MdeYlm1bJtIXZAh7R6jYFbWK2qY2dJTRTEKSS+nGU6B/vWuifi3ARjZfwZlm+/TsG227h5R8mdlW8bBAb1zog==",
   "success": true,
-  "projectFilePath": "C:\\Develop\\feaafefe\\BestStories\\BestStories.csproj",
+  "projectFilePath": "C:\\Develop\\Git\\best-stories\\BestStories.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Diogo\\.nuget\\packages\\humanizer.core\\2.8.26\\humanizer.core.2.8.26.nupkg.sha512",
     "C:\\Users\\Diogo\\.nuget\\packages\\messagepack\\2.1.152\\messagepack.2.1.152.nupkg.sha512",

@@ -9655,11 +9655,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Develop\\feaafefe\\BestStories\\BestStories.csproj",
+      "projectUniqueName": "C:\\Develop\\Git\\best-stories\\BestStories.csproj",
       "projectName": "BestStories",
-      "projectPath": "C:\\Develop\\feaafefe\\BestStories\\BestStories.csproj",
+      "projectPath": "C:\\Develop\\Git\\best-stories\\BestStories.csproj",
       "packagesPath": "C:\\Users\\Diogo\\.nuget\\packages\\",
-      "outputPath": "C:\\Develop\\feaafefe\\BestStories\\obj\\",
+      "outputPath": "C:\\Develop\\Git\\best-stories\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Diogo\\AppData\\Roaming\\NuGet\\NuGet.Config",

@@ -1,5 +1,4 @@
 ﻿using BestStories.Configs;
-using BestStories.Data;
 using BestStories.Model;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;

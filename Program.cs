@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using BestStories.Data;
 using BestStories.Services;
 
 var builder = WebApplication.CreateBuilder(args);

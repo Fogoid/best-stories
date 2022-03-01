@@ -1,14 +1,19 @@
 ﻿using BestStories.Configs;
+using BestStories.Exceptions;
 using BestStories.Model;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Collections.Concurrent;
 
 namespace BestStories.Services
 {
     public class BestStoriesService : IBestStoriesService
     {
         private DateTime lastUpdate;
-        
+        private ConcurrentBag<Story> currentBestStories;
+        private List<Task> activeTasks;
+        private int storiesCounter;
+
         private readonly BestStoriesProperties properties;
         private readonly ILogger<BestStoriesService> logger;
         private readonly Dictionary<DateTime, IList<Story>> bestStoriesDic = new();
@@ -27,20 +32,12 @@ namespace BestStories.Services
                 await UpdateStoriesAsync();
             }
 
-            return bestStoriesDic[lastUpdate];
-        }
-
-        private Story ConvertToStoryDTO(Story story)
-        {
-            return new Story()
+            if (lastUpdate.AddMilliseconds(properties.Validity).CompareTo(DateTime.UtcNow) > -1)
             {
-                Title = story.Title,
-                Uri = story.Uri,
-                PostedBy = story.PostedBy,
-                Time = story.Time,
-                Score = story.Score,
-                CommentCount = story.CommentCount
-            };
+                return bestStoriesDic[lastUpdate];
+            }
+
+            throw new NoValidTimesException("Could not retrieve best stories. Try again later");
         }
 
         private async Task UpdateStoriesAsync()
@@ -54,43 +51,60 @@ namespace BestStories.Services
             }
 
             var newTime = DateTime.UtcNow;
-            var bestInstantStories = new List<Story>();
-
 
             var result = await response.Content.ReadAsStringAsync();
             var bestStories = JArray.Parse(result);
 
-            var i = 0;
-            var totalChecked = 0;
-            while (i < 20 && totalChecked < bestStories.Count)
+            activeTasks = new List<Task>();
+            storiesCounter = 20;
+            var currentBestStories = new ConcurrentBag<Story>();
+
+            for (var i = 0; i < 20; i++)
             {
-                var story = bestStories[i];
+                var j = i;
+                var task = Task.Run(async () => {
+                    Story? s = await GetBestStoryAsync(j, bestStories);
+                    if (s != null)
+                    {
+                        currentBestStories.Add(s);
+                    }
+                });
 
-                var itemUri = properties.BaseItemUri + story.ToString() + ".json";
-                var itemResponse = await client.GetAsync(itemUri);
-
-                if (itemResponse.IsSuccessStatusCode)
-                {
-                    var itemResult = await itemResponse.Content.ReadAsStringAsync();
-                    JObject itemDetails = JsonConvert.DeserializeObject<JObject>(itemResult);
-
-                    var itemStory = CreateStory(itemDetails);
-
-                    bestInstantStories.Add(itemStory);
-
-                    i++;
-                }
-                totalChecked++;
-
+                activeTasks.Add(task);
             }
 
-            if (bestInstantStories.Count != 20)
+            await Task.WhenAll(activeTasks);
+
+            if (currentBestStories.Count != 20)
             {
-                //Throw exception
+                return;
             }
 
             lastUpdate = newTime;
-            bestStoriesDic.Add(newTime, bestInstantStories);
+            var storiesToAdd = new List<Story>(currentBestStories);
+            storiesToAdd.Sort((s, s2) => - s.Score.CompareTo(s2.Score));
+            bestStoriesDic.Add(newTime, storiesToAdd);
+        }
+
+        private async Task<Story?> GetBestStoryAsync(int index, JArray bestStories)
+        {
+            var client = new HttpClient();
+            var story = bestStories[index];
+
+            var itemUri = properties.BaseItemUri + story.ToString() + ".json";
+            var itemResponse = await client.GetAsync(itemUri);
+
+            if (itemResponse.IsSuccessStatusCode)
+            {
+                var itemResult = await itemResponse.Content.ReadAsStringAsync();
+                JObject itemDetails = JsonConvert.DeserializeObject<JObject>(itemResult);
+
+
+                return CreateStory(itemDetails);
+    
+            }
+
+            return null;
         }
 
         private Story CreateStory(JObject itemDetails)

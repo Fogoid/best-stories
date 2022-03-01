@@ -4,6 +4,7 @@ using BestStories.Model;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
+using System.Timers;
 
 namespace BestStories.Services
 {
@@ -21,16 +22,37 @@ namespace BestStories.Services
         {
             this.logger = logger;
             this.properties = new BestStoriesProperties(configuration);
+            ScheduleBestStoriesUpdate();
+        }
+
+        private void ScheduleBestStoriesUpdate()
+        {
+            var timer = new System.Timers.Timer(properties.Validity);
+            timer.Elapsed += OnTimedEvent;
+            timer.AutoReset = true;
+            timer.Enabled = true;
+            timer.Start();
+        }
+
+        private async void OnTimedEvent(Object source, ElapsedEventArgs e)
+        {
+            logger.LogInformation(e.SignalTime + ": Started update on best stories");
+            
+            var oldLastUpdate = lastUpdate;
+            
+            await UpdateStoriesAsync();
+            
+            if (oldLastUpdate == lastUpdate)
+            {
+                logger.LogError(e.SignalTime + ": Update was not performed successfully");
+                return;
+            }
+
+            logger.LogInformation(e.SignalTime + ": Update performed successfully");
         }
 
         public async Task<IEnumerable<Story>> GetBestStoriesAsync()
         {
-            // Update stories only if they are past validity time
-            if (lastUpdate.AddMilliseconds(properties.Validity).CompareTo(DateTime.UtcNow) == -1)
-            {
-                await UpdateStoriesAsync();
-            }
-
             if (lastUpdate.AddMilliseconds(properties.Validity).CompareTo(DateTime.UtcNow) > -1)
             {
                 return bestStoriesDic[lastUpdate];

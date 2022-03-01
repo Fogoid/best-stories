@@ -27,7 +27,6 @@ namespace BestStories.Model
             {
                 return NotFound(ex.Message);
             }
-            
         }
     }
 }

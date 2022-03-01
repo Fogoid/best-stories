@@ -1,12 +1,8 @@
 ﻿#nullable disable
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
+using System.Net;
 using BestStories.Services;
+using BestStories.Exceptions;
+using Microsoft.AspNetCore.Mvc;
 
 namespace BestStories.Model
 {
@@ -21,11 +17,17 @@ namespace BestStories.Model
             this.bestStoriesService = bestStoriesService;
         }
 
-        // GET: api/<BestStories>
         [HttpGet]
-        public async Task<IEnumerable<Story>> GetAsync()
+        public async Task<IActionResult> GetAsync()
         {
-            return await bestStoriesService.GetBestStoriesAsync();
+            try
+            {
+                return Ok(await bestStoriesService.GetBestStoriesAsync());
+            } catch (NoValidTimesException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            
         }
     }
 }

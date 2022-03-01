@@ -10,7 +10,6 @@ namespace BestStories.Services
     public class BestStoriesService : IBestStoriesService
     {
         private DateTime lastUpdate;
-        private ConcurrentBag<Story> currentBestStories;
         private List<Task> activeTasks;
         private int storiesCounter;
 
